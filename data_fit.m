@@ -3,6 +3,7 @@ clear variables
 
 run_params;
 flags.cost_control=0;
+flags.model = 3;
 
 %Use the Ontario data to fit Kc, K0, Mc, M0, and initial sick
 
@@ -19,10 +20,9 @@ LB = [0;0;0];
 UB =[inf;inf;inf];
 
 options = optimoptions('lsqcurvefit','UseParallel',true);
-[V,RESNORM,RESIDUAL,EXITFLAG] = lsqcurvefit(@covid_lsq,v0,DATA_T,[DATA_pos/params.N_crit,DATA_tot/params.N_crit],LB,UB,options);
+[V,RESNORM,RESIDUAL,EXITFLAG] = lsqcurvefit(@covid_lsq,v0,DATA_T,[DATA_pos/params.N_crit,DATA_tot/params.N_crit],LB,UB,options,flags);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-flags.model = 3;
 params.Kc = V(1);
 params.Mc = V(2);
 params.rho0 = V(3);

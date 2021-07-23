@@ -2,7 +2,11 @@ close all
 clear variables
 
 date_flag = 1;
-base_date = datenum('10-Mar-2020','dd-mmm-yy');
+if date_flag
+    base_date = datenum('10-Mar-2020','dd-mmm-yy');
+else
+    base_date = 0;
+end
 
 process_data_2 = 0;
 process_data_5 = 0;
