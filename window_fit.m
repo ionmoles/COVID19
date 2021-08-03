@@ -7,8 +7,8 @@ flags.model = 3;
 
 window(1) = 150;
 window(2) = 308;
-window(3) = 384;%350;
-window(4) = 407;%497;
+window(3) = 384;%384;%350;
+window(4) = 407;%407;%497;
 window(5) = 497;
 
 %Use the Ontario data to fit Kc, K0, Mc, M0, and initial sick
