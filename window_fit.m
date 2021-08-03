@@ -4,6 +4,7 @@ clear variables
 run_params;
 flags.cost_control=0;
 flags.model = 3;
+flags.lsq_refine = 1; %turn on if you want to refine the parameter fitting
 
 window(1) = 150;
 window(2) = 308;
@@ -37,7 +38,7 @@ flags.diffy0 = 0;
 
 var_names = {'S';'S_1';'S_2';'E';'E_1';'E_2';'P';'P_1';'P_2';'P_M';'I_S';'I_{S1}';'I_{S2}';'I_{SM}';'I_A';'I_{A1}';'I_{A2}';'I_{AM}';'R_S';'R_{S1}';'R_{S2}';'R_{SM}';'R_A';'R_{A1}';'R_{A2}';'R_{AM}';'M';'C'};
 
-options = [];%optimoptions('lsqcurvefit','UseParallel',true);
+options = optimoptions('lsqcurvefit','UseParallel',true);
 odeopts = odeset('NonNegative',1,'RelTol',1e-8,'AbsTol',1e-9);
 
 flags.cases = 0;
@@ -54,13 +55,22 @@ for k=1:length(window)
         v0 = V{k-1};
         y0 = y{k-1}(end,:);
     end
-    if k==3
-        flags.cases = 1;
-%         v0 = [v0 params.Cc]; 
-%         LB = [LB;0];
-%         UB = [UB;inf];
+    if flags.lsq_refine
+        %Update parameters to convergence
+        converge_done = 0;
+        converge_tol = 1E-8;
+        while ~converge_done
+            [V{k},RESNORM,RESIDUAL,EXITFLAG] = lsqcurvefit(@covid_lsq,v0,current_times,[current_pos/params.N_crit,current_tot/params.N_crit],LB,UB,options,flags,y0);
+%             norm(V{k}-v0,2)
+            if norm(V{k}-v0,2)<=converge_tol
+                converge_done = 1;
+            end
+            v0 = V{k};
+
+        end
+    else
+        [V{k},RESNORM,RESIDUAL,EXITFLAG] = lsqcurvefit(@covid_lsq,v0,current_times,[current_pos/params.N_crit,current_tot/params.N_crit],LB,UB,options,flags,y0);
     end
-    [V{k},RESNORM,RESIDUAL,EXITFLAG] = lsqcurvefit(@covid_lsq,v0,current_times,[current_pos/params.N_crit,current_tot/params.N_crit],LB,UB,options,flags,y0);
     
     switch flags.cases
         case 0
@@ -71,19 +81,6 @@ for k=1:length(window)
             params.rhoI = 4*V{k}(3);
             params.K0 = 4*params.Kc;
             params.M0 = 2*params.Mc;
-        case 1
-            params.Kc = V{k}(1);
-            params.Mc = V{k}(2);
-            params.rho0 = V{k}(3);
-
-            params.rhoI = 4*V{k}(3);
-            params.K0 = 4*params.Kc;
-            params.M0 = 2*params.Mc;
-            
-%             params.Cc = V{k}(4);
-%             params.C0 = 2*params.Cc;
-%             params.numax = 0;
-%             params.mumax = 100*params.mumax;
     end
 
     params.beta = params.R0*params.phi*params.gamma/(params.alpha*(params.gamma+params.phi)+(1-params.alpha)*params.q*params.phi);
