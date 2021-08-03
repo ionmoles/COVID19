@@ -37,7 +37,7 @@ flags.diffy0 = 0;
 
 var_names = {'S';'S_1';'S_2';'E';'E_1';'E_2';'P';'P_1';'P_2';'P_M';'I_S';'I_{S1}';'I_{S2}';'I_{SM}';'I_A';'I_{A1}';'I_{A2}';'I_{AM}';'R_S';'R_{S1}';'R_{S2}';'R_{SM}';'R_A';'R_{A1}';'R_{A2}';'R_{AM}';'M';'C'};
 
-options = optimoptions('lsqcurvefit','UseParallel',true);
+options = [];%optimoptions('lsqcurvefit','UseParallel',true);
 odeopts = odeset('NonNegative',1,'RelTol',1e-8,'AbsTol',1e-9);
 
 flags.cases = 0;
