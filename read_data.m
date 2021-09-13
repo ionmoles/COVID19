@@ -16,10 +16,17 @@ switch data_flag
 end
 
 curpath = pwd;
-datpath = strcat(curpath(1:length(curpath)-6),'\Data\');
+cd ..
+uppath = cd;
+cd (curpath);
+datpath = strcat('..\Data\');
 filetit = [datpath,year,'\',basetitle,' - ',mday,'.csv'];
 
-T = readtable(filetit,'TreatAsEmpty','');
+try
+    T = readtable(filetit,'TreatAsEmpty','');
+catch
+    error('Matlab is trying to read %s, but file and/or directory do not exist.\n Make sure you have created the directory %s and have stored the correct CSV file.\n',strcat(uppath,'\Data\',year,'\',basetitle,' - ',mday,'.csv'),strcat(uppath,'\Data\',year,'\'));
+end
 
 switch data_flag
     case 0
