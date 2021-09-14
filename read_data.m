@@ -3,16 +3,19 @@ clear variables
 
 year = '2021';
 mday = 'Sept13';
-data_flag = 2;
+data_flag = 3;
 % 0 - covid cases
 % 1 - vaccine data
 % 2 - variant cases
+% 3 - Re
 
 switch data_flag
     case {0,2}
         basetitle='covidtesting';
     case 1
         basetitle='vaccine_doses';
+    case 3
+        basetitle='Re';
 end
 
 curpath = pwd;
@@ -63,6 +66,11 @@ switch data_flag
         DATA_var = T{date_spot:end,24:24+DATA_notes.varsize-1}-T{date_spot-1:end-1,24:24+DATA_notes.varsize-1};
         new_avg = (DATA_new(1:end-6)+DATA_new(2:end-5)+DATA_new(3:end-4)+DATA_new(4:end-3)+DATA_new(5:end-2)+DATA_new(6:end-1)+DATA_new(7:end))/7;
         var_avg = (DATA_var(1:end-6,:)+DATA_var(2:end-5,:)+DATA_var(3:end-4,:)+DATA_var(4:end-3,:)+DATA_var(5:end-2,:)+DATA_var(6:end-1,:)+DATA_var(7:end,:))/7;
+    case 3
+        DATA_notes.time={'Re first recorded Jun 21, 2021','first point is 468 days after Marh 10'};
+        Tlen = size(T,1);
+        DATA_T = linspace(468,468+Tlen-1,Tlen)';
+        DATA_Re = T{:,2};
 end
 
 switch data_flag
@@ -72,4 +80,6 @@ switch data_flag
         save(['vDATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_tot1','DATA_totfull');
     case 2
         save(['variant_DATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_tot','DATA_new','DATA_var','new_avg','var_avg');
+    case 3
+        save(['Re_DATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_Re');
 end

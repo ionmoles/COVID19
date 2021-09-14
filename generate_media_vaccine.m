@@ -50,12 +50,14 @@ while ~done
     switch experiment
         case 0
             DATA = load('variant_DATA-2021-Sept13.mat');
+            DATA2 = load('Re_DATA-2021-Sept13.mat');
             [fig,figprop]=new_figure('variants_plot',pos);
             
             hold on
             for k=1:DATA.DATA_notes.varsize
                 plot(base_date+DATA.DATA_T(7:end),DATA.var_avg(:,k)./DATA.new_avg,'Marker',symbs{k},'LineStyle','none')
             end
+            plot(base_date+DATA2.DATA_T,DATA2.DATA_Re,'s');
             hold off
             xlim([base_date+DATA.DATA_notes.time_var,base_date+length(DATA.DATA_T)]);
             if date_flag
@@ -66,7 +68,7 @@ while ~done
             end
             figprop.ylab=ylabel('Percent of cases (7-day average)');
             figprop.ax = gca;
-            figprop.leg = legend({'$\alpha$','$\beta$','$\gamma$','$\delta$'},'location','northwest');
+            figprop.leg = legend({'$\alpha$','$\beta$','$\gamma$','$\delta$','Re'},'location','northwest');
             figprop.fnt_size = 14;
             
             

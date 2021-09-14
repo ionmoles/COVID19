@@ -1,6 +1,14 @@
 close all
 clear variables
 
+date_flag = 1;
+
+if date_flag
+    base_date = datenum('10-Mar-2020','dd-mmm-yy');
+else
+    base_date = 0;
+end
+
 run_params;
 flags.cost_control=0;
 flags.model = 3;
@@ -101,38 +109,73 @@ end
 figure
 hold on
 for k=1:length(window)
-    plot(t{k},y{k}(:,1)+y{k}(:,2)+y{k}(:,3),'linewidth',2);
+    plot(t{k}+base_date,y{k}(:,1)+y{k}(:,2)+y{k}(:,3),'linewidth',2);
 end
 hold off
+
+xlim([base_date,base_date+DATA_T(end)]);
+
+if date_flag
+    datetick('x','dd-mmm-yy','keepticks','keeplimits');
+    xtickangle(45);
+end
 
 figure
 hold on
 for k=1:length(window)
-    plot(t{k},y{k}(:,2)+y{k}(:,3),'linewidth',2);
+    plot(t{k}+base_date,y{k}(:,2)+y{k}(:,3),'linewidth',2);
 end
 hold off
+
+xlim([base_date,base_date+DATA_T(end)]);
+
+if date_flag
+    datetick('x','dd-mmm-yy','keepticks','keeplimits');
+    xtickangle(45);
+end
 
 figure
 hold on
 for k=1:length(window)
-    plot(t{k},y{k}(:,28),'linewidth',2);
+    plot(t{k}+base_date,y{k}(:,28),'linewidth',2);
 end
 hold off
 
-figure
-plot(t{1},AM{1},'linewidth',2);
-hold on
-for k=2:length(window)
-    plot(t{k},AM{k},'linewidth',2);
+xlim([base_date,base_date+DATA_T(end)]);
+
+if date_flag
+    datetick('x','dd-mmm-yy','keepticks','keeplimits');
+    xtickangle(45);
 end
-plot(DATA_T,(DATA_pos)/params.N0,'o');
-hold off
 
 figure
-plot(t{1},M{1},'linewidth',2);
+plot(t{1}+base_date,AM{1},'linewidth',2);
 hold on
 for k=2:length(window)
-    plot(t{k},M{k},'linewidth',2);
+    plot(t{k}+base_date,AM{k},'linewidth',2);
 end
-plot(DATA_T,(DATA_tot)/params.N0,'o');
+plot(DATA_T+base_date,(DATA_pos)/params.N0,'o');
 hold off
+
+xlim([base_date,base_date+DATA_T(end)]);
+
+if date_flag
+    datetick('x','dd-mmm-yy','keepticks','keeplimits');
+    xtickangle(45);
+end
+
+figure
+plot(t{1}+base_date,M{1},'linewidth',2);
+hold on
+for k=2:length(window)
+    plot(t{k}+base_date,M{k},'linewidth',2);
+end
+plot(DATA_T+base_date,(DATA_tot)/params.N0,'o');
+hold off
+
+xlim([base_date,base_date+DATA_T(end)]);
+
+if date_flag
+    datetick('x','dd-mmm-yy','keepticks','keeplimits');
+    xtickangle(45);
+end
