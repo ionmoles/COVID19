@@ -3,7 +3,7 @@ clear variables
 
 year = '2021';
 mday = 'Sept13';
-data_flag = 3;
+data_flag = 2;
 % 0 - covid cases
 % 1 - vaccine data
 % 2 - variant cases
@@ -64,12 +64,45 @@ switch data_flag
         DATA_tot = T{date_spot:end,8};
         DATA_new = T{date_spot:end,8}-T{date_spot-1:end-1,8};
         DATA_var = T{date_spot:end,24:24+DATA_notes.varsize-1}-T{date_spot-1:end-1,24:24+DATA_notes.varsize-1};
-        new_avg = (DATA_new(1:end-6)+DATA_new(2:end-5)+DATA_new(3:end-4)+DATA_new(4:end-3)+DATA_new(5:end-2)+DATA_new(6:end-1)+DATA_new(7:end))/7;
-        var_avg = (DATA_var(1:end-6,:)+DATA_var(2:end-5,:)+DATA_var(3:end-4,:)+DATA_var(4:end-3,:)+DATA_var(5:end-2,:)+DATA_var(6:end-1,:)+DATA_var(7:end,:))/7;
+        new_avg7 = 0;
+        var_avg7 = 0;
+        
+        for k=1:7
+            new_avg7 = new_avg7 + DATA_new(k:end-(7-k));
+            var_avg7 = var_avg7 + DATA_var(k:end-(7-k),:);
+        end
+        
+        new_avg7 = new_avg7/7;
+        var_avg7 = var_avg7/7;
+        
+        new_avg14 = 0;
+        var_avg14 = 0;
+        
+        for k=1:14
+            new_avg14 = new_avg14 + DATA_new(k:end-(14-k));
+            var_avg14 = var_avg14 + DATA_var(k:end-(14-k),:);
+        end
+        
+        new_avg14 = new_avg14/14;
+        var_avg14 = var_avg14/14;
+        
+        new_avg21 = 0;
+        var_avg21 = 0;
+        
+        for k=1:21
+            new_avg21 = new_avg21 + DATA_new(k:end-(21-k));
+            var_avg21 = var_avg21 + DATA_var(k:end-(21-k),:);
+        end
+        
+        new_avg21 = new_avg21/21;
+        var_avg21 = var_avg21/21;
+        
+%         new_avg = (DATA_new(1:end-6)+DATA_new(2:end-5)+DATA_new(3:end-4)+DATA_new(4:end-3)+DATA_new(5:end-2)+DATA_new(6:end-1)+DATA_new(7:end))/7;
+%         var_avg = (DATA_var(1:end-6,:)+DATA_var(2:end-5,:)+DATA_var(3:end-4,:)+DATA_var(4:end-3,:)+DATA_var(5:end-2,:)+DATA_var(6:end-1,:)+DATA_var(7:end,:))/7;
     case 3
-        DATA_notes.time={'Re first recorded Jun 21, 2021','first point is 468 days after Marh 10'};
+        DATA_notes.time={'Re first recorded March 19, 2021','first point is 9 days after Marh 10'};
         Tlen = size(T,1);
-        DATA_T = linspace(468,468+Tlen-1,Tlen)';
+        DATA_T = linspace(9,9+Tlen-1,Tlen)';
         DATA_Re = T{:,2};
 end
 
@@ -79,7 +112,7 @@ switch data_flag
     case 1
         save(['vDATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_tot1','DATA_totfull');
     case 2
-        save(['variant_DATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_tot','DATA_new','DATA_var','new_avg','var_avg');
+        save(['variant_DATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_tot','DATA_new','DATA_var','new_avg7','var_avg7','new_avg14','var_avg14','new_avg21','var_avg21');
     case 3
         save(['Re_DATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_Re');
 end

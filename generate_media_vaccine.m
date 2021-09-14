@@ -55,7 +55,7 @@ while ~done
             
             hold on
             for k=1:DATA.DATA_notes.varsize
-                plot(base_date+DATA.DATA_T(7:end),DATA.var_avg(:,k)./DATA.new_avg,'Marker',symbs{k},'LineStyle','none')
+                plot(base_date+DATA.DATA_T(14:end),DATA.var_avg14(:,k)./DATA.new_avg14,'Marker',symbs{k},'LineStyle','none')
             end
             plot(base_date+DATA2.DATA_T,DATA2.DATA_Re,'s');
             hold off
