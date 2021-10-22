@@ -4,15 +4,15 @@ clear variables
 
 curpath = pwd;
 newpath = strcat(curpath,'\runs\');
-flags.save = 0; %Choose to save run or not
-flags.case_name = 0; %Whether to use date stamping or case naming
+flags.save = 0; %Choose to save run (1) or not (0)
+flags.case_name = 0; %Whether to use date stamping (0) or case naming (1)
 title_case = 2;
 flags.social_distance = 1; %Decide if social distancing is enabled (0 sets all motion rates to 0)
 flags.cost_control = 0; %Decide if relaxation is controlled with cases
 
 
 %SET MODEL
-flags.model = 3; 
+flags.model = 4; 
 %*****************************************1 -SEPIR model
 %S-susceptible, no social distancing
 %E- exposed, no symptoms, not infectious
@@ -48,6 +48,23 @@ flags.model = 3;
 %1 and 2 subscripts for all above M for testing removal
 %M - media reports (a proxy for testing results)
 %C - cost of social distancing
+%*****************************************4 -SEPIR model with social
+%distancing, cost, and vaccination. People who are tested are removed if positive
+%S-susceptible, no social distancing
+%S1-susceptible, some social distancing (3/4 reduction)
+%S2-susceptible, complete social distancing (1 reduction)
+%E- exposed, no symptoms, not infectious
+%P – Presymptomatic, infectious
+%IS – infectious and symptomatic
+%IA – infectious, asymptomatic
+%Rs – recovered/removed from Is
+%Ra – recovered/removed from Ia
+%1 and 2 subscripts for all above M for testing removal
+%Added V and W compartment for vaccinated (effective) or vaccinated
+%(ineffective)
+%M - media reports (a proxy for testing results)
+%C - cost of social distancing
+
 %Note, we scale this model by N_crit instead of N
 
 fprintf('Running model %i\n',flags.model);
@@ -116,11 +133,45 @@ switch flags.model
 %         t0 = [0,161];
         var_names = {'S';'S_1';'S_2';'E';'E_1';'E_2';'P';'P_1';'P_2';'P_M';'I_S';'I_{S1}';'I_{S2}';'I_{SM}';'I_A';'I_{A1}';'I_{A2}';'I_{AM}';'R_S';'R_{S1}';'R_{S2}';'R_{SM}';'R_A';'R_{A1}';'R_{A2}';'R_{AM}';'M';'C'};
         
+    case 4
+        run_params;
+        temp_p = params.p;
+        params.p = 0;
+        
+        vac_time = 220;%350;
+        
+        if flags.social_distance==0
+            params.muI = 0;
+            params.rho0 = 0;
+            params.rhoI = 0;
+            params.rhoV0 = 0;
+            params.rhoVI = 0;
+            params.mumax = 0;
+            params.numax = 0;
+            params.mumaxV = 0;
+            params.numaxV = 0;
+        end
+        
+       
+        t0 = [1,3*365];
+        var_names = {'S';'S_1';'S_2';'E';'E_1';'E_2';'P';'P_1';'P_2';'P_M';'I_S';'I_{S1}';'I_{S2}';'I_{SM}';'I_A';'I_{A1}';'I_{A2}';'I_{AM}';'R_S';'R_{S1}';'R_{S2}';'R_{SM}';'R_A';'R_{A1}';'R_{A2}';'R_{AM}';'M';'C';...
+            'VS';'VS_1';'VS_2';'VE';'VE_1';'VE_2';'VP';'VP_1';'VP_2';'VP_M';'VI_S';'VI_{S1}';'VI_{S2}';'VI_{SM}';'VI_A';'VI_{A1}';'VI_{A2}';'VI_{AM}';'VR_S';'VR_{S1}';'VR_{S2}';'VR_{SM}';'VR_A';'VR_{A1}';'VR_{A2}';'VR_{AM}';...
+            'WS';'WS_1';'WS_2';'WE';'WE_1';'WE_2';'WP';'WP_1';'WP_2';'WP_M';'WI_S';'WI_{S1}';'WI_{S2}';'WI_{SM}';'WI_A';'WI_{A1}';'WI_{A2}';'WI_{AM}';'WR_S';'WR_{S1}';'WR_{S2}';'WR_{SM}';'WR_A';'WR_{A1}';'WR_{A2}';'WR_{AM}'};
+        
 end
 
 % odeopts = odeset('NonNegative',1,'RelTol',1e-8,'AbsTol',1e-9);
 odeopts = odeset('NonNegative',1);
-[t,y] = ode23t(@ODEf,t0,y0,odeopts,params,flags);
+switch flags.model
+    case 4
+        sol = ode23t(@ODEf,[1,vac_time],y0,odeopts,params,flags);
+        params.p = temp_p;
+        sol = odextend(sol,@ODEf,t0(end),[],odeopts,params,flags);
+        t = sol.x;
+        y = sol.y';
+    otherwise
+        [t,y] = ode23t(@ODEf,t0,y0,odeopts,params,flags);
+end
 
 switch flags.model
     case 1
@@ -133,6 +184,10 @@ switch flags.model
         sick = sum(y(:,11:26),2);
         sickS = sum(y(:,11:14),2)+sum(y(:,19:22),2);
         sickA = sum(y(:,15:18),2)+sum(y(:,23:26),2);
+    case 4
+        sick = sum(y(:,11:26),2) + sum(y(:,39:54),2) + sum(y(:,65:80),2);
+        sickS = sum(y(:,11:14),2) + sum(y(:,19:22),2) + sum(y(:,39:42),2) + sum(y(:,47:50),2) + sum(y(:,65:68),2) + sum(y(:,73:76),2);
+        sickA = sum(y(:,15:18),2) + sum(y(:,23:26),2) + sum(y(:,43:46),2) + sum(y(:,51:54),2) + sum(y(:,69:72),2) + sum(y(:,77:80),2);
 end
 
 % t = t/365*12;
@@ -188,10 +243,50 @@ switch flags.model
                 plot(t,y(:,6+(k-3)*4+j),'linewidth',2);
             end
             legend(var_names{6+(k-3)*4+1:6+(k-3)*4+4},'location','best');
-            if k==4
-                plot(t,ones(length(t),1)*params.N_crit/params.N0,'k--','linewidth',2);
-                plot(t,y(:,11)+y(:,12)+y(:,13)+y(:,14),'k','linewidth',2);
+%             if k==4
+%                 plot(t,ones(length(t),1)*params.N_crit/params.N0,'k--','linewidth',2);
+%                 plot(t,y(:,11)+y(:,12)+y(:,13)+y(:,14),'k','linewidth',2);
+%             end
+            hold off
+        end
+        figure
+        yyaxis left
+        plot(t,y(:,27),'linewidth',2);
+        hold on
+        yyaxis right
+        plot(t,y(:,10)+y(:,14)+y(:,18),'linewidth',2);
+        legend({var_names{27},'M_A'},'location','best');
+        
+        figure
+        plot(t,y(:,28),'linewidth',2);
+        legend(var_names{28},'location','best');
+    case 4
+        for k=1:2
+            figure
+            hold on
+            for j=1:3
+                plot(t,y(:,(k-1)*3+j),'linewidth',2);
             end
+            for j=1:3
+                plot(t,y(:,28+(k-1)*3+j),'linewidth',2);
+            end
+            legend({var_names{(k-1)*3+1:(k-1)*3+3},var_names{28+(k-1)*3+1:28+(k-1)*3+3}},'location','best');
+            hold off
+        end
+        for k = 3:5
+            figure
+            hold on
+            for j=1:4
+                plot(t,y(:,6+(k-3)*4+j),'linewidth',2);
+            end
+            for j=1:4
+                plot(t,y(:,34+(k-3)*4+j),'linewidth',2);
+            end
+            legend({var_names{6+(k-3)*4+1:6+(k-3)*4+4},var_names{34+(k-3)*4+1:34+(k-3)*4+4}},'location','best');
+%             if k==4
+%                 plot(t,ones(length(t),1)*params.N_crit/params.N0,'k--','linewidth',2);
+%                 plot(t,y(:,11)+y(:,12)+y(:,13)+y(:,14),'k','linewidth',2);
+%             end
             hold off
         end
         figure
@@ -211,7 +306,7 @@ figure
 switch flags.model
     case 1
         plot(t,sick,'linewidth',2);
-    case {2,3}
+    case {2,3,4}
         hold on
         plot(t,sickS*params.N0/params.N,'linewidth',2);
         plot(t,sickA*params.N0/params.N,'linewidth',2);
@@ -343,4 +438,4 @@ if flags.save
     save(strcat(newpath,file_title),'t','y','params');
 end
 
-data_compare_plot
+% data_compare_plot

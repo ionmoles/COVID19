@@ -2,12 +2,13 @@ close all
 clear variables
 
 year = '2021';
-mday = 'Sept13';
-data_flag = 2;
+mday = 'Oct18';
+data_flag = 1;
 % 0 - covid cases
 % 1 - vaccine data
-% 2 - variant cases
+% 2 - variant cases (from covidtesting)
 % 3 - Re
+% 4 - variant cases (from other PHO source)
 
 switch data_flag
     case {0,2}
@@ -16,6 +17,8 @@ switch data_flag
         basetitle='vaccine_doses';
     case 3
         basetitle='Re';
+    case 4
+        basetitle = 'variant';
 end
 
 curpath = pwd;
@@ -26,7 +29,7 @@ datpath = strcat('..\Data\');
 filetit = [datpath,year,'\',basetitle,' - ',mday,'.csv'];
 
 try
-    T = readtable(filetit,'TreatAsEmpty','');
+    T = readtable(filetit,'TreatAsEmpty',{'','-'});
 catch
     error('Matlab is trying to read %s, but file and/or directory do not exist.\n Make sure you have created the directory %s and have stored the correct CSV file.\n',strcat(uppath,'\Data\',year,'\',basetitle,' - ',mday,'.csv'),strcat(uppath,'\Data\',year,'\'));
 end
@@ -47,7 +50,7 @@ switch data_flag
         Tlen = size(T,1)-date_spot+1;
         DATA_T = linspace(302,302+Tlen-1,Tlen)';
         DATA_tot1 = T{date_spot:end,6};
-        DATA_totfull = T{date_spot:end,8};
+        DATA_tot2 = T{date_spot:end,8};
     case 2
         T = fillmissing(T,'previous');
         DATA_notes.time={'variants first recorded Jan 29, 2021','first time point Mar 10, 2020','variants first measured 326 days after March 10'};
@@ -104,15 +107,30 @@ switch data_flag
         Tlen = size(T,1);
         DATA_T = linspace(9,9+Tlen-1,Tlen)';
         DATA_Re = T{:,2};
+    case 4
+        DATA_notes.time={'variants first recorded Dec 20, 2020','variants first measured 285 days after March 10'};
+        DATA_notes.time_var = 285; %corresponds to variants starting 285 days after Mar 10
+        DATA_notes.varsize=4;
+        start_date='10-Mar-0020';
+        date_spot = find(T{:,1}==start_date);
+        variants_nan = isnan(T{:,16:2:16+2*(DATA_notes.varsize+2-1)});
+        for k=1:DATA_notes.varsize+2
+            T{variants_nan(:,k),16+2*(k-1)}=0;
+        end
+        Tlen = size(T,1)-date_spot+1;
+        DATA_T = linspace(0,Tlen-1,Tlen)';
+        DATA_var = T{date_spot:end,16:2:16+2*(DATA_notes.varsize+2-1)};
 end
 
 switch data_flag
     case 0
         save(['DATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_pos','DATA_tot');
     case 1
-        save(['vDATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_tot1','DATA_totfull');
+        save(['vaccine_DATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_tot1','DATA_tot2');
     case 2
         save(['variant_DATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_tot','DATA_new','DATA_var','new_avg7','var_avg7','new_avg14','var_avg14','new_avg21','var_avg21');
     case 3
         save(['Re_DATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_Re');
+    case 4
+        save(['variant2_DATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_var');
 end
