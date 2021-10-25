@@ -3,7 +3,7 @@ clear variables
 
 year = '2021';
 mday = 'Oct18';
-data_flag = 1;
+data_flag = 0;
 % 0 - covid cases
 % 1 - vaccine data
 % 2 - variant cases (from covidtesting)
@@ -43,6 +43,8 @@ switch data_flag
         DATA_T = linspace(0,Tlen-1,Tlen)';
         DATA_pos = T{date_spot:end,5};
         DATA_tot = T{date_spot:end,8};
+        DATA_test = T{date_spot:end,10};
+        DATA_test(isnan(DATA_test)) = 0;
     case 1
         DATA_notes.time={'first vaccine data Jan 7, 2021','first point is 302 days from March 10'};
         start_date='2021-01-06';
@@ -124,7 +126,7 @@ end
 
 switch data_flag
     case 0
-        save(['DATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_pos','DATA_tot');
+        save(['DATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_pos','DATA_tot','DATA_test');
     case 1
         save(['vaccine_DATA-',year,'-',mday,'.mat'],'DATA_notes','DATA_T','DATA_tot1','DATA_tot2');
     case 2

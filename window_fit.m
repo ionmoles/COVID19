@@ -13,6 +13,7 @@ flags.cost_control=0;
 flags.model = 4;
 flags.lsq_refine = 0; %turn on if you want to refine the parameter fitting
 flags.fit_tot = 0; %turn on if you want to fit to total data as well as active data
+flags.fit_test = 0; %turn on if you want to fit to test data
 
 run_params;
 
@@ -20,6 +21,7 @@ run_params;
 
 % window=[89;163;290;309;342;393;457;476;492;587];
 window=[89;163;290;315;324;342;367;393;425;457;462;476;492;540;587];
+% window=[35;89;163;290;315;324;342;367;393;425;457;462;476;492;540;587];
 %vaccine change at 309,393,476
 param_flag = [0;0;0;0;2;2;2;2;2;2;2;2;2;2;2];
 % param_flag = [0;0;0;0;0;0;0;0;0;0;0;0;0;0;0];
@@ -38,6 +40,14 @@ Vdat = load(['vaccine_DATA-',year,'-',mday,'.mat']);
 
 DATA_pos = DATA_pos - DATA_pos(1);
 DATA_tot = DATA_tot - DATA_tot(1);
+
+DATA_test = [DATA_test(2:end);0];
+%Assume that first days of COVID had about an 8% testing rate as well
+test_spot = find(DATA_test~=0,1);
+for k=2:test_spot-1
+    DATA_test(k)=(DATA_tot(k)-DATA_tot(k-1))/0.08;
+end
+
 DATA_vac = zeros(length(DATA_pos),1);
 DATA_vac(Vdat.DATA_T(2+14):end) = Vdat.DATA_tot1(1:end-14);
 
@@ -76,11 +86,13 @@ for k=1:length(window)
         current_times = DATA_T(1:window(1));
         current_pos = DATA_pos(1:window(1));
         current_tot = DATA_tot(1:window(1));
+        current_test = DATA_test(1:window(1));
         current_vac = DATA_vac(1:window(1));
     else
         current_times = DATA_T(window(k-1):window(k));
         current_pos = DATA_pos(window(k-1):window(k));
         current_tot = DATA_tot(window(k-1):window(k));
+        current_test = DATA_test(window(k-1):window(k));
         current_vac = DATA_vac(window(k-1):window(k));
         v0 = V{k-1};
         y0 = y{k-1}(end,:);
@@ -88,10 +100,12 @@ for k=1:length(window)
     %Update parameters to convergence
     converge_done = 0;
     converge_tol = 1E-8;
+    case_dat = [current_pos/params.N_crit];
     if flags.fit_tot
-        case_dat = [current_pos/params.N_crit;current_tot/params.N_crit];
-    else
-        case_dat = [current_pos/params.N_crit];
+        case_dat = [case_dat;current_tot/params.N_crit];
+    end
+    if flags.fit_test
+        case_dat = [case_dat;current_test/params.N_crit];
     end
     while ~converge_done
         switch flags.cases
@@ -148,6 +162,7 @@ for k=1:length(window)
     AT{k} = y{k}(:,7)+y{k}(:,8)+y{k}(:,9)+y{k}(:,10)+y{k}(:,11)+y{k}(:,12)+y{k}(:,13)+y{k}(:,14)+y{k}(:,15)+y{k}(:,16)+y{k}(:,17)+y{k}(:,18);
     VT{k} = sum(y{k}(:,29:80),2);
     sick{k} = sum(y{k}(:,7:26),2) + sum(y{k}(:,35:54),2) + sum(y{k}(:,61:80),2);
+    tests{k} = params.rho0*(sum(y{k}(:,1:10),2)+sum(y{k}(:,15:26),2))+params.rhoI*(sum(y{k}(:,11:14),2))+params.rhoV0*(sum(y{k}(:,29:38),2)+sum(y{k}(:,43:64),2)+sum(y{k}(:,69:80),2))+params.rhoVI*(sum(y{k}(:,39:42),2)+sum(y{k}(:,65:68),2));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -183,6 +198,21 @@ if date_flag
     xtickangle(45);
 end
 ylim([0,30]);
+
+figure
+hold on
+for k=1:length(window)
+    plot(t{k}(2:end)+base_date,(M{k}(2:end)-M{k}(1:end-1))./tests{k}(2:end),'linewidth',2);
+end
+hold off
+title('Positivity Rate');
+
+xlim([base_date,base_date+DATA_T(end)]);
+
+if date_flag
+    datetick('x','dd-mmm-yy','keepticks','keeplimits');
+    xtickangle(45);
+end
 
 figure
 hold on
@@ -237,6 +267,21 @@ for k=2:length(window)
     plot(t{k}+base_date,M{k}*params.N0,'linewidth',2);
 end
 plot(DATA_T+base_date,(DATA_tot),'o');
+hold off
+
+xlim([base_date,base_date+DATA_T(end)]);
+
+if date_flag
+    datetick('x','dd-mmm-yy','keepticks','keeplimits');
+    xtickangle(45);
+end
+
+figure
+hold on
+for k=1:length(window)
+    plot(t{k}+base_date,tests{k}*params.N0,'linewidth',2);
+end
+plot(DATA_T+base_date,(DATA_test),'o');
 hold off
 
 xlim([base_date,base_date+DATA_T(end)]);

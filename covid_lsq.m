@@ -26,7 +26,7 @@ switch flags.cases
     case 1
         params.Kc = v0(1);
         params.Mc = v0(2);
-        params.rho0 = v0(3);
+        params.rho0 = v(3);
 
         params.rhoI = 4*params.rho0;
         params.K0 = 4*params.Kc;
@@ -77,12 +77,16 @@ M = y(:,27);
 
 AM = PM + IsM + IaM + VPM + VIsM + VIaM + WPM + WIsM +WIaM;
 VT = sum(y(:,29:80),2);
+tests = params.rho0*(sum(y(:,1:10),2)+sum(y(:,15:26),2))+params.rhoI*(sum(y(:,11:14),2))+params.rhoV0*(sum(y(:,29:38),2)+sum(y(:,43:64),2)+sum(y(:,69:80),2))+params.rhoVI*(sum(y(:,39:42),2)+sum(y(:,65:68),2));
 
+fit_dat = AM;
 if flags.fit_tot
-    fit_dat = [AM;M];
-else
-    fit_dat = AM;
+    fit_dat = [fit_dat;M];
 end
+if flags.fit_test
+    fit_dat = [fit_dat;tests];
+end
+
 switch flags.cases
     case 0
         Y = fit_dat;
