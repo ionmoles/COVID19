@@ -1,7 +1,7 @@
 close all
 clear variables
 
-date_flag = 0;
+date_flag = 1;
 
 if date_flag
     base_date = datenum('10-Mar-2020','dd-mmm-yy');
@@ -12,7 +12,7 @@ end
 flags.cost_control=0;
 flags.model = 4;
 flags.lsq_refine = 0; %turn on if you want to refine the parameter fitting
-flags.fit_tot = 0; %turn on if you want to fit to total data as well as active data
+flags.fit_tot = 1; %turn on if you want to fit to total data as well as active data
 flags.fit_test = 0; %turn on if you want to fit to test data
 
 run_params;
@@ -42,11 +42,14 @@ DATA_pos = DATA_pos - DATA_pos(1);
 DATA_tot = DATA_tot - DATA_tot(1);
 
 DATA_test = [DATA_test(2:end);0];
+DATA_testper = [DATA_testper(2:end);0];
 %Assume that first days of COVID had about an 8% testing rate as well
 test_spot = find(DATA_test~=0,1);
+per_spot = find(DATA_testper~=0,1);
 for k=2:test_spot-1
     DATA_test(k)=(DATA_tot(k)-DATA_tot(k-1))/0.08;
 end
+DATA_testper(1:per_spot) = 0.08;
 
 DATA_vac = zeros(length(DATA_pos),1);
 DATA_vac(Vdat.DATA_T(2+14):end) = Vdat.DATA_tot1(1:end-14);
@@ -159,10 +162,12 @@ for k=1:length(window)
     M{k} = y{k}(:,27);
 
     AM{k} = PM{k} + IsM{k} + IaM{k} + VPM{k} + VIsM{k} + VIaM{k} + WPM{k} + WIsM{k} +WIaM{k};
-    AT{k} = y{k}(:,7)+y{k}(:,8)+y{k}(:,9)+y{k}(:,10)+y{k}(:,11)+y{k}(:,12)+y{k}(:,13)+y{k}(:,14)+y{k}(:,15)+y{k}(:,16)+y{k}(:,17)+y{k}(:,18);
+    AT{k} = sum(y{k}(:,7:18),2)+sum(y{k}(:,35:46),2)+sum(y{k}(:,61:72),2);
     VT{k} = sum(y{k}(:,29:80),2);
     sick{k} = sum(y{k}(:,7:26),2) + sum(y{k}(:,35:54),2) + sum(y{k}(:,61:80),2);
     tests{k} = params.rho0*(sum(y{k}(:,1:10),2)+sum(y{k}(:,15:26),2))+params.rhoI*(sum(y{k}(:,11:14),2))+params.rhoV0*(sum(y{k}(:,29:38),2)+sum(y{k}(:,43:64),2)+sum(y{k}(:,69:80),2))+params.rhoVI*(sum(y{k}(:,39:42),2)+sum(y{k}(:,65:68),2));
+    
+    Recovered{k} = sum(y{k}(:,19:26),2)+sum(y{k}(:,47:54),2)+sum(y{k}(:,73:80));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -204,8 +209,24 @@ hold on
 for k=1:length(window)
     plot(t{k}(2:end)+base_date,(M{k}(2:end)-M{k}(1:end-1))./tests{k}(2:end),'linewidth',2);
 end
+plot(DATA_T+base_date,DATA_testper,'o');
 hold off
-title('Positivity Rate');
+title('Test Positivity Rate');
+
+xlim([base_date,base_date+DATA_T(end)]);
+
+if date_flag
+    datetick('x','dd-mmm-yy','keepticks','keeplimits');
+    xtickangle(45);
+end
+
+figure
+hold on
+for k=1:length(window)
+    plot(t{k}+base_date,Recovered{k}*params.N0/params.N,'linewidth',2);
+end
+hold off
+title('Recovered %');
 
 xlim([base_date,base_date+DATA_T(end)]);
 
